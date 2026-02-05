@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16
+    container_name: cafe_db
+    environment:
+      POSTGRES_DB: cafeteria_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+  web:
+    build: ./web
+    container_name: cafe_web
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    env_file:
+      - .env
