@@ -101,7 +101,7 @@ FROM products p
 JOIN categories c ON c.id = p.category_id
 LEFT JOIN sales_last_month s ON s.product_id = p.id
 WHERE p.active = true
-HAVING p.stock < 50 OR COALESCE(s.qty_vendida, 0) > p.stock
+  AND (p.stock < 50 OR COALESCE(s.qty_vendida, 0) > p.stock)
 ORDER BY porcentaje_riesgo DESC NULLS LAST;
 
 

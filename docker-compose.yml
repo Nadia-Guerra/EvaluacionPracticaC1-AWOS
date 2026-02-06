@@ -1,4 +1,4 @@
-services:
+services:  
   db:
     image: postgres:16
     container_name: cafe_db
@@ -7,17 +7,24 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - ./db:/docker-entrypoint-initdb.d
+      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./db/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./db/03_indexes.sql:/docker-entrypoint-initdb.d/03_indexes.sql
+      - ./db/04_reports_vw.sql:/docker-entrypoint-initdb.d/04_reports_vw.sql
+      - ./db/05_roles.sql:/docker-entrypoint-initdb.d/05_roles.sql
+      - ./db/migrate.sql:/docker-entrypoint-initdb.d/migrate.sql
     ports:
       - "5432:5432"
 
   web:
     build: ./web
     container_name: cafe_web
-    command: npm run dev
     ports:
       - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@cafe_db:5432/cafeteria_db
     depends_on:
       - db
-    env_file:
-      - .env
+    volumes:
+      - ./web:/app
+      - /app/node_modules

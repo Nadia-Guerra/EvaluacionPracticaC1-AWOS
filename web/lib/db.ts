@@ -4,7 +4,7 @@ const pool = new Pool({
   host: 'cafe_db',
   port: 5432,
   database: 'cafeteria_db',
-  user: 'postgres',       
+  user: 'app_user',       
   password: 'postgres',    
 });
 
