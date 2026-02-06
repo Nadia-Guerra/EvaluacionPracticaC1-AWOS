@@ -1,25 +1,118 @@
 # Cafetería Dashboard ☕📊
 
-Dashboard analítico desarrollado en **Next.js + TypeScript** que consume **reportes SQL (VIEWS)** desde **PostgreSQL**, ejecutándose completamente con **Docker Compose** y aplicando **seguridad real por roles**.
+Dashboard analítico desarrollado con **Next.js (App Router) + TypeScript** que consume **reportes SQL (VIEWS)** desde **PostgreSQL**, ejecutándose completamente con **Docker Compose** y aplicando **seguridad real por roles**.
 
-Este proyecto simula el área de analítica de una cafetería del campus y permite analizar ventas, productos estrella, inventario en riesgo, clientes frecuentes y mezcla de pagos.
+
+---
+
+## 🧪 Pruebas de seguridad y funcionamiento
+
+Estas pruebas verifican que la aplicación cumple con el requisito de **seguridad real por roles** y que el acceso a la base de datos está correctamente restringido.
+
+### 1️⃣ Conectarse como `app_user`
+
+```bash
+docker exec -it cafe_db psql -U app_user -d cafeteria_db
+```
+
+---
+
+### 2️⃣ Probar acceso a VIEWS (✅ debe funcionar)
+
+```sql
+SELECT * FROM vw_sales_daily LIMIT 3;
+```
+
+---
+
+### 3️⃣ Probar acceso a TABLAS (❌ debe fallar)
+
+```sql
+SELECT * FROM customers LIMIT 1;
+```
+
+**Resultado esperado:**
+
+```
+ERROR:  permission denied for table customers
+```
+
+---
+
+### ✅ Resultado esperado de seguridad
+
+**El usuario `app_user` puede:**
+
+* Leer datos de las 5 VIEWS analíticas
+
+**El usuario `app_user` NO puede:**
+
+* Leer tablas directamente
+* Insertar datos
+* Actualizar datos
+* Eliminar datos
+* Crear o modificar la estructura de la base de datos
+
+Esto garantiza que, incluso si la aplicación fuera comprometida, un atacante solo podría acceder a datos agregados desde las VIEWS y no a información sensible ni a la estructura de la base de datos.
+
+---
+
+## ▶️ Guía rápida de pruebas (paso a paso)
+
+### 2. Pruebas desde terminal (API)
+
+Ejecutar llamadas directas a la API para validar los reportes:
+
+```bash
+curl http://localhost:3000/api/reports/sales-daily
+curl http://localhost:3000/api/reports/top-products?page=1&limit=5
+curl http://localhost:3000/api/reports/payment-mix
+```
+
+**Resultado esperado:**
+
+* Respuestas en formato JSON
+* Los datos corresponden a los reportes definidos en las VIEWS
+* No se exponen tablas ni credenciales
+
+---
+
+### 3. Pruebas desde la aplicación (Next.js)
+
+Abrir en el navegador:
+
+* `http://localhost:3000` (Dashboard principal)
+* Navegar a cualquiera de los reportes:
+
+  * `/reports/sales-daily`
+  * `/reports/top-products`
+  * `/reports/inventory-risk`
+  * `/reports/customer-value`
+  * `/reports/payment-mix`
+
+**Resultado esperado:**
+
+* Cada pantalla muestra título, descripción del insight, tabla de resultados y al menos un KPI
+* Filtros, búsqueda y paginación funcionan correctamente
+
+---
 
 ## 🗂️ Estructura del proyecto
 
 ```
 .
 ├── db/
-│   ├── schema.sql        # Definición de tablas y relaciones
+│   ├── schema.sql        # Tablas y relaciones
 │   ├── seed.sql          # Datos de prueba
-│   ├── migrate.sql       # Script de inicialización
+│   ├── migrate.sql       # Migraciones incrementales
 │   ├── reports_vw.sql    # VIEWS analíticas
-│   ├── indexes.sql       # Índices de optimización
+│   ├── indexes.sql       # Índices
 │   └── roles.sql         # Roles y permisos
 │
 ├── web/
 │   └── src/app/
-│       ├── api/reports/  # Endpoints API (solo SELECT sobre VIEWS)
-│       └── reports/      # Páginas del dashboard
+│       ├── api/reports/  # API Routes (solo SELECT sobre VIEWS)
+│       └── reports/      # Pantallas del dashboard
 │
 ├── docker-compose.yml
 └── README.md
@@ -29,80 +122,42 @@ Este proyecto simula el área de analítica de una cafetería del campus y permi
 
 ## 🛢️ Base de datos
 
-### Tablas principales
+La base de datos contiene más de 5 tablas relacionadas mediante llaves foráneas reales:
 
-* `categories(id, name)`
-* `products(id, name, category_id, price, stock, active)`
-* `customers(id, name, email)`
-* `orders(id, customer_id, created_at, status_id, channel)`
-* `order_items(id, order_id, product_id, qty, unit_price)`
-* `payments(id, order_id, method_id, paid_amount)`
-* `methods(id, name)`
+* `categories`
+* `products`
+* `customers`
+* `orders`
+* `order_items`
+* `payments`
+* `methods`
 
-
-Los scripts se ejecutan automáticamente al levantar el contenedor.
-
----
-
-## 📊 VIEWS analíticas implementadas
-
-Todas las consultas de la app se realizan **exclusivamente sobre VIEWS**.
-
-### 1️⃣ `vw_sales_daily`
-
-* Grain: 1 fila por día
-* Métricas: `total_ventas`, `tickets`, `ticket_promedio`
-* Filtros: rango de fechas
-* Incluye: `HAVING`, agregados y campos calculados
-
-### 2️⃣ `vw_top_products_ranked`
-
-* Ranking por revenue y unidades
-* Window Functions: `RANK() OVER`
-* Soporta búsqueda por nombre y paginación
-* Incluye CTE
-
-### 3️⃣ `vw_inventory_risk`
-
-* Productos con stock bajo
-* Métricas de riesgo e inventario
-* CASE para nivel de riesgo
-* Filtro por categoría
-
-### 4️⃣ `vw_customer_value`
-
-* Valor de vida del cliente (CLV)
-* Métricas: total gastado, órdenes, promedio
-* CASE para estado del cliente
-* Soporta paginación
-
-### 5️⃣ `vw_payment_mix`
-
-* Distribución de pagos por método
-* Porcentajes usando Window Functions
-
-✔️ 5+ VIEWS
-✔️ Agregados, GROUP BY, CASE, HAVING
-✔️ CTE y Window Functions
-✔️ Sin `SELECT *` en múltiples VIEWS
+Todos los scripts SQL se ejecutan automáticamente al levantar el contenedor.
 
 ---
 
-## 🔐 Seguridad (Roles y permisos)
+## 📊 VIEWS analíticas
 
-La aplicación **NO se conecta como postgres**.
+Todas las consultas de la aplicación se realizan **exclusivamente sobre VIEWS**:
 
-### Roles definidos
+* `vw_sales_daily`: ventas diarias con métricas agregadas y filtro por fechas
+* `vw_top_products_ranked`: ranking de productos (Window Functions, búsqueda y paginación)
+* `vw_inventory_risk`: productos con riesgo de inventario
+* `vw_customer_value`: valor de vida del cliente (CLV) con paginación
+* `vw_payment_mix`: mezcla de pagos con porcentajes
 
-* `postgres`: rol administrador (solo infraestructura)
-* `app_user`: rol de la aplicación
+Las VIEWS incluyen agregados, GROUP BY, CASE, HAVING, CTEs y Window Functions.
 
-### Permisos del usuario `app_user`
+---
 
-El usuario **NO tiene acceso directo a tablas**
-Solo puede ejecutar `SELECT` sobre VIEWS
+## 🔐 Seguridad
 
-### Verificación
+* La aplicación **no se conecta como `postgres`**
+* Se utiliza el rol `app_user`
+* `app_user` solo tiene permisos `SELECT` sobre VIEWS
+* No existe acceso directo a tablas desde la app
+
+Ejemplo de verificación:
 
 ```sql
 SET ROLE app_user;
@@ -112,150 +167,33 @@ SELECT * FROM vw_sales_daily; -- OK
 
 ---
 
-## ⚡ Índices y optimización
-
-Se incluyen **mínimo 3 índices relevantes** en `db/indexes.sql`, por ejemplo:
-
-* Índices sobre fechas (`orders.created_at`)
-* Índices sobre claves foráneas
-* Índices para búsquedas (`products.name`)
-
-### Evidencia con EXPLAIN
-
-Ejemplo:
-
-```sql
-EXPLAIN ANALYZE
-SELECT * FROM vw_top_products_ranked
-WHERE product_name ILIKE '%café%'
-LIMIT 10 OFFSET 0;
-```
-
-Los planes de ejecución muestran uso efectivo de índices.
-
----
-
-## 🖥️ Frontend (Next.js – App Router)
-
-### Dashboard principal (`/`)
-
-La aplicación cuenta con un **dashboard principal** que funciona como punto de entrada y contiene **tarjetas / enlaces** a cada uno de los reportes analíticos disponibles.
-
-Desde esta vista el usuario puede navegar a cada reporte individual.
-
-### Pantallas de reportes
-
-Se implementan **mínimo 5 pantallas**, una por cada VIEW analítica:
-
-* `/reports/sales-daily`
-* `/reports/top-products`
-* `/reports/inventory-risk`
-* `/reports/customer-value`
-* `/reports/payment-mix`
-
-Cada pantalla de reporte incluye:
-
-* **Título del reporte**
-* **Descripción del insight analítico**
-* **Tabla legible de resultados**
-* **Al menos 1 KPI destacado** (por ejemplo: total de ventas, total pagado, ranking, etc.)
-
-### Data fetching y seguridad
-
-* Todo el data fetching se realiza **server-side** usando **Server Components** y **API Routes**.
-* **No se exponen credenciales** al cliente.
-* El cliente nunca accede directamente a la base de datos.
-* Todas las consultas ejecutadas por la app son exclusivamente:
-
-```sql
-SELECT * FROM <VIEW>
-```
-
----
-
 ## 🔎 Filtros, búsqueda y paginación
 
-La aplicación implementa filtros y paginación **server-side**, cumpliendo con los requisitos del enunciado.
+* Filtros:
 
-### Filtros
+  * Ventas diarias: rango de fechas
+  * Inventario: categoría (whitelist)
+* Búsqueda:
 
-* `vw_sales_daily`
+  * Top productos por nombre
+* Paginación server-side:
 
-  * Filtro por rango de fechas (`date_from`, `date_to`).
+  * Top productos
+  * Valor de clientes
 
-* `vw_inventory_risk`
-
-  * Filtro por categoría (`category_id`), validado mediante whitelist.
-
-### Búsqueda
-
-* `vw_top_products_ranked`
-
-  * Búsqueda por nombre de producto (`search`).
-
-### Paginación server-side
-
-Se implementa paginación usando `LIMIT` y `OFFSET`:
-
-* `vw_top_products_ranked`
-* `vw_customer_value`
-
-Los parámetros `page` y `limit` son:
-
-* Validados en el servidor
-* Limitados a rangos seguros
-* Nunca interpolados directamente sin control
+Todo el procesamiento se realiza en el servidor.
 
 ---
 
 ## 🐳 Docker Compose
 
-El proyecto se ejecuta completamente mediante **Docker Compose**.
-
-### Servicios levantados
-
-* **PostgreSQL** (`cafe_db`)
-* **Next.js** (`cafe_web`)
-
-### Comando de ejecución
+El proyecto se ejecuta completamente con:
 
 ```bash
 docker compose up --build
 ```
 
-Este comando:
-
-* Construye las imágenes
-* Inicializa la base de datos
-* Ejecuta los scripts SQL (`schema`, `seed`, `views`, `indexes`, `roles`)
-* Levanta la aplicación web
-
-La aplicación queda disponible en:
-
-```
-http://localhost:3000
-```
+Este comando levanta PostgreSQL y Next.js, inicializa la base de datos y deja la aplicación lista para usarse en `http://localhost:3000`.
 
 ---
-
-## 🐳 Ejecución con Docker
-
-### Levantar el proyecto
-
-```bash
-docker compose up --build
-```
-
-La app estará disponible en:
-
-```
-http://localhost:3000
-```
-
-### Reiniciar BD (opcional)
-
-```bash
-docker compose down -v
-docker compose up --build
-```
 
