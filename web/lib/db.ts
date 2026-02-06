@@ -5,10 +5,10 @@ const pool = new Pool({
   port: 5432,
   database: 'cafeteria_db',
   user: 'app_user',       
-  password: 'postgres',    
+  password: 'app_pass',    
 });
 
-export async function query(text: string) {
-  const result = await pool.query(text);
+export async function query(text: string, params: any[] = []) {
+  const result = await pool.query(text, params);
   return result.rows;
 }
