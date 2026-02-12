@@ -1,28 +1,50 @@
 import { NextResponse } from 'next/server';
 import { query } from '../../../../../lib/db';
+import { z } from 'zod';
+
+const SalesDailySchema = z.object({
+  date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  date_to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const start = searchParams.get('start');
-  const end = searchParams.get('end');
-
-  let sql = `
-    SELECT *
-    FROM vw_sales_daily
-  `;
-  const params: any[] = [];
-
-  if (start && end) {
-    sql += ` WHERE fecha BETWEEN $1 AND $2`;
-    params.push(start, end);
-  }
-
-  sql += ` ORDER BY fecha DESC`;
-
   try {
-    const data = await query(sql,params);
+    const { searchParams } = new URL(request.url);
+    
+    // Validar parámetros con Zod
+    const validation = SalesDailySchema.safeParse({
+      date_from: searchParams.get('date_from'),
+      date_to: searchParams.get('date_to'),
+    });
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Parámetros inválidos. Formato de fecha: YYYY-MM-DD' },
+        { status: 400 }
+      );
+    }
+
+    const { date_from, date_to } = validation.data;
+
+    let sql = 'SELECT * FROM vw_sales_daily WHERE 1=1';
+    const params: string[] = [];
+
+    if (date_from) {
+      params.push(date_from);
+      sql += ` AND fecha >= $${params.length}`;
+    }
+
+    if (date_to) {
+      params.push(date_to);
+      sql += ` AND fecha <= $${params.length}`;
+    }
+
+    sql += ' ORDER BY fecha DESC';
+
+    const data = await query(sql, params);
     return NextResponse.json(data);
   } catch (error) {
+    console.error('Error en sales-daily:', error);
     return NextResponse.json(
       { error: 'Error al obtener ventas diarias' },
       { status: 500 }
