@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import Link from 'next/link';
 
 type InventoryRiskRow = {
   product_id: number;
@@ -12,14 +13,14 @@ type InventoryRiskRow = {
   nivel_riesgo: string;
 };
 
-async function getInventoryRisk(): Promise<InventoryRiskRow[]> {
+async function getInventoryRisk(categoryId?: string): Promise<InventoryRiskRow[]> {
   const headersList = await headers();
   const host = headersList.get('host');
 
-  const res = await fetch(
-    `http://${host}/api/reports/inventory-risk`,
-    { cache: 'no-store' }
-  );
+  let url = `http://${host}/api/reports/inventory-risk`;
+  if (categoryId) url += `?category_id=${categoryId}`;
+
+  const res = await fetch(url, { cache: 'no-store' });
 
   if (!res.ok) {
     throw new Error('Error al obtener inventario en riesgo');
@@ -28,88 +29,98 @@ async function getInventoryRisk(): Promise<InventoryRiskRow[]> {
   return res.json();
 }
 
-export default async function InventoryRiskPage() {
-  const data = await getInventoryRisk();
+export default async function InventoryRiskPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category_id?: string }>; // ← Promise aquí
+}) {
+  const params = await searchParams; // ← await aquí
+  const data = await getInventoryRisk(params.category_id);
 
   const getRiskColor = (nivel: string) => {
     switch (nivel) {
-      case 'CRÍTICO':
-        return 'bg-red-100 text-red-800';
-      case 'ALTO':
-        return 'bg-orange-100 text-orange-800';
-      case 'MEDIO':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-green-100 text-green-800';
+      case 'CRÍTICO': return 'bg-red-100 text-red-800';
+      case 'ALTO': return 'bg-orange-100 text-orange-800';
+      case 'MEDIO': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-green-100 text-green-800';
     }
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-semibold mb-2">
-        Inventario en riesgo
-      </h1>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-blue-900 mb-2">
+          Inventario en Riesgo
+        </h1>
+        <p className="text-gray-600 mb-6">
+          Productos con stock bajo y nivel de riesgo
+        </p>
 
-      <p className="text-gray-600 mb-6">
-        Productos con stock bajo y nivel de riesgo.
-      </p>
+        <form method="get" className="bg-white p-4 rounded-lg shadow-sm border border-blue-100 mb-6 flex gap-4">
+          <div>
+            <label className="block text-sm font-medium text-blue-800 mb-1">
+              Categoría
+            </label>
+            <select
+              name="category_id"
+              defaultValue={params.category_id || ''}
+              className="border border-blue-200 rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas</option>
+              <option value="1">Bebidas</option>
+              <option value="2">Panadería</option>
+              <option value="3">Snacks</option>
+            </select>
+          </div>
+          <div className="flex items-end gap-2">
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 transition"
+            >
+              Filtrar
+            </button>
+            <Link
+              href="/reports/inventory-risk"
+              className="bg-gray-200 text-gray-700 px-6 py-2 rounded font-semibold hover:bg-gray-300 transition"
+            >
+              Limpiar
+            </Link>
+          </div>
+        </form>
 
-      <div className="overflow-x-auto border rounded-lg">
-        <table className="min-w-full border-collapse">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-4 py-2 text-left border-b">Producto</th>
-              <th className="px-4 py-2 text-left border-b">Categoría</th>
-              <th className="px-4 py-2 text-right border-b">Stock</th>
-              <th className="px-4 py-2 text-right border-b">Vendidos (mes)</th>
-              <th className="px-4 py-2 text-right border-b">Días inv.</th>
-              <th className="px-4 py-2 text-right border-b">% Riesgo</th>
-              <th className="px-4 py-2 text-center border-b">Nivel</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {data.map((row) => (
-              <tr key={row.product_id} className="hover:bg-gray-50">
-                <td className="px-4 py-2 border-b font-medium">
-                  {row.product_name}
-                </td>
-                <td className="px-4 py-2 border-b">
-                  {row.category_name}
-                </td>
-                <td className="px-4 py-2 border-b text-right">
-                  {row.stock_actual}
-                </td>
-                <td className="px-4 py-2 border-b text-right">
-                  {row.unidades_vendidas_mes}
-                </td>
-                <td className="px-4 py-2 border-b text-right">
-                  {row.dias_inventario || 'N/A'}
-                </td>
-                <td className="px-4 py-2 border-b text-right">
-                  {Number(row.porcentaje_riesgo).toFixed(2)}%
-                </td>
-                <td className="px-4 py-2 border-b text-center">
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${getRiskColor(row.nivel_riesgo)}`}>
-                    {row.nivel_riesgo}
-                  </span>
-                </td>
-              </tr>
-            ))}
-
-            {data.length === 0 && (
+        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-blue-100">
+          <table className="min-w-full">
+            <thead className="bg-blue-600 text-white">
               <tr>
-                <td
-                  colSpan={7}
-                  className="px-4 py-6 text-center text-gray-500"
-                >
-                  No hay datos para mostrar
-                </td>
+                <th className="px-6 py-4 text-left font-semibold uppercase text-sm">Producto</th>
+                <th className="px-6 py-4 text-left font-semibold uppercase text-sm">Categoría</th>
+                <th className="px-6 py-4 text-right font-semibold uppercase text-sm">Stock</th>
+                <th className="px-6 py-4 text-right font-semibold uppercase text-sm">Vendidos</th>
+                <th className="px-6 py-4 text-right font-semibold uppercase text-sm">Días Inv.</th>
+                <th className="px-6 py-4 text-right font-semibold uppercase text-sm">% Riesgo</th>
+                <th className="px-6 py-4 text-center font-semibold uppercase text-sm">Nivel</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-blue-50">
+              {data.map((row) => (
+                <tr key={row.product_id} className="hover:bg-blue-50/50 transition">
+                  <td className="px-6 py-4 text-blue-900 font-medium">{row.product_name}</td>
+                  <td className="px-6 py-4 text-gray-600">{row.category_name}</td>
+                  <td className="px-6 py-4 text-right">{row.stock_actual}</td>
+                  <td className="px-6 py-4 text-right">{row.unidades_vendidas_mes}</td>
+                  <td className="px-6 py-4 text-right">{row.dias_inventario || 'N/A'}</td>
+                  <td className="px-6 py-4 text-right font-bold text-blue-700">{Number(row.porcentaje_riesgo).toFixed(2)}%</td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${getRiskColor(row.nivel_riesgo)}`}>
+                      {row.nivel_riesgo}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
-} 
+}

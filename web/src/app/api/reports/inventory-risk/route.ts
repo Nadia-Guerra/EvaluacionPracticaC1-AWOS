@@ -5,7 +5,7 @@ import { z } from 'zod';
 const ALLOWED_CATEGORIES = [1, 2, 3] as const;
 
 const InventoryRiskSchema = z.object({
-  category_id: z.enum(['1', '2', '3']).optional(),
+  category_id: z.enum(['1', '2', '3']).optional().nullable(),
 });
 
 export async function GET(request: Request) {
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     const validation = InventoryRiskSchema.safeParse({
-      category_id: searchParams.get('category_id'),
+      category_id: searchParams.get('category_id') || null,
     });
 
     if (!validation.success) {

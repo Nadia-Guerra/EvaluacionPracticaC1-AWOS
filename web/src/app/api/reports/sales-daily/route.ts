@@ -3,18 +3,17 @@ import { query } from '../../../../../lib/db';
 import { z } from 'zod';
 
 const SalesDailySchema = z.object({
-  date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  date_to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  date_to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 });
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     
-    // Validar parámetros con Zod
     const validation = SalesDailySchema.safeParse({
-      date_from: searchParams.get('date_from'),
-      date_to: searchParams.get('date_to'),
+      date_from: searchParams.get('date_from') || null,
+      date_to: searchParams.get('date_to') || null,
     });
 
     if (!validation.success) {
