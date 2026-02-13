@@ -38,7 +38,7 @@ export default async function PaymentMixPage() {
           Distribución y rendimiento por método de pago utilizado.
         </p>
 
-        {/* Tarjetas de Resumen Visual */}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {data.slice(0, 4).map((item) => (
             <div key={item.method_id} className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-600">
@@ -53,7 +53,7 @@ export default async function PaymentMixPage() {
           ))}
         </div>
 
-        {/* Tabla Detallada */}
+       
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-blue-100">
           <table className="min-w-full">
             <thead className="bg-blue-600 text-white">

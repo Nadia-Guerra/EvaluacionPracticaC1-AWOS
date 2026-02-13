@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import Link from 'next/link';
 
+//igual a la BD
 type SalesDailyRow = {
   fecha: string;
   tickets: number;
@@ -8,6 +9,7 @@ type SalesDailyRow = {
   ticket_promedio: string;
 };
 
+//formato d la fecha
 function formatDate(dateString: string): string {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
@@ -17,6 +19,8 @@ function formatDate(dateString: string): string {
   return `${day}/${month}/${year}`;
 }
 
+
+//funcion, obtiene el host
 async function getSalesDaily(dateFrom?: string, dateTo?: string): Promise<SalesDailyRow[]> {
   const headersList = await headers();
   const host = headersList.get('host');
@@ -43,7 +47,7 @@ export default async function SalesDailyPage({
 }: {
   searchParams: Promise<{ date_from?: string; date_to?: string }>; 
 }) {
-  const params = await searchParams; // ← await aquí
+  const params = await searchParams; 
   const data = await getSalesDaily(params.date_from, params.date_to);
 
   return (

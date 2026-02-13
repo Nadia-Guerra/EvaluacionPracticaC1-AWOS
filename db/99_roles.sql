@@ -1,0 +1,18 @@
+\c cafeteria_db;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_user') THEN
+    CREATE ROLE app_user LOGIN PASSWORD 'app_pass';
+  END IF;
+END
+$$;
+
+GRANT USAGE ON SCHEMA public TO app_user;
+
+GRANT SELECT ON 
+  vw_sales_daily,
+  vw_top_products_ranked,
+  vw_inventory_risk,
+  vw_customer_value,
+  vw_payment_mix
+TO app_user;

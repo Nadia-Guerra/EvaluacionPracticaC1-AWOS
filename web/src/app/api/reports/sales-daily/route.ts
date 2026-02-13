@@ -1,7 +1,10 @@
+
+//importaciones necesarias
 import { NextResponse } from 'next/server';
 import { query } from '../../../../../lib/db';
 import { z } from 'zod';
 
+//schema para valifacion de zod
 const SalesDailySchema = z.object({
   date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   date_to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
@@ -11,7 +14,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     
-    const validation = SalesDailySchema.safeParse({
+    const validation = SalesDailySchema.safeParse({ //valida q se cumpla el zod
       date_from: searchParams.get('date_from') || null,
       date_to: searchParams.get('date_to') || null,
     });
