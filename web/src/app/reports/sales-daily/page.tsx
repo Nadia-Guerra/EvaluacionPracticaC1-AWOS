@@ -41,7 +41,7 @@ async function getSalesDaily(dateFrom?: string, dateTo?: string): Promise<SalesD
 export default async function SalesDailyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date_from?: string; date_to?: string }>; // ← Promise aquí
+  searchParams: Promise<{ date_from?: string; date_to?: string }>; 
 }) {
   const params = await searchParams; // ← await aquí
   const data = await getSalesDaily(params.date_from, params.date_to);

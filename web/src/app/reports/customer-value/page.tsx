@@ -46,7 +46,7 @@ async function getCustomerValue(page = 1, limit = 10): Promise<ApiResponse> {
 export default async function CustomerValuePage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; limit?: string }>; // ← Promise aquí
+  searchParams: Promise<{ page?: string; limit?: string }>; 
 }) {
   const params = await searchParams; // ← await aquí
   const page = parseInt(params.page || '1');

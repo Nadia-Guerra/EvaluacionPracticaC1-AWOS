@@ -32,9 +32,9 @@ async function getInventoryRisk(categoryId?: string): Promise<InventoryRiskRow[]
 export default async function InventoryRiskPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category_id?: string }>; // ← Promise aquí
+  searchParams: Promise<{ category_id?: string }>; // 
 }) {
-  const params = await searchParams; // ← await aquí
+  const params = await searchParams; //await porque si no da errorcito
   const data = await getInventoryRisk(params.category_id);
 
   const getRiskColor = (nivel: string) => {

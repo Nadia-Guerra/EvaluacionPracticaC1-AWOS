@@ -10,12 +10,12 @@ type PaymentMixRow = {
 };
 
 async function getPaymentMix(): Promise<PaymentMixRow[]> {
-  const headersList = await headers(); // Se usa await para evitar errores de Next.js
+  const headersList = await headers(); 
   const host = headersList.get('host');
 
   const res = await fetch(
     `http://${host}/api/reports/payment-mix`,
-    { cache: 'no-store' } // Asegura datos frescos en cada carga
+    { cache: 'no-store' } 
   );
 
   if (!res.ok) {
