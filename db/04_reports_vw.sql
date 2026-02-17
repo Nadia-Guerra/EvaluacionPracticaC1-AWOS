@@ -147,7 +147,7 @@ ORDER BY total_gastado DESC;
 
 CREATE OR REPLACE VIEW vw_payment_mix AS
 SELECT
-  m.id AS method_id
+  m.id AS method_id,
   m.name AS method_name,
   COUNT(p.id) AS num_transacciones,
   COALESCE(SUM(p.paid_amount), 0) AS total_pagado,
